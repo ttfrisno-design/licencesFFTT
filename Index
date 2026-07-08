@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    :root{
+      --bleu:#0b2a6b; --rouge:#e2233a; --vert:#1f9d55; --gris:#f4f6fa; --texte:#1a1a1a;
+    }
+    *{box-sizing:border-box;}
+    body{font-family:Arial, Helvetica, sans-serif; background:var(--gris); margin:0; padding:24px; color:var(--texte);}
+    .wrap{max-width:760px; margin:0 auto; background:#fff; border-radius:10px; padding:28px 32px; box-shadow:0 2px 10px rgba(0,0,0,.08);}
+    h1{color:var(--bleu); font-size:22px; margin-top:0;}
+    h2{color:var(--bleu); font-size:18px; border-bottom:3px solid var(--bleu); padding-bottom:6px;}
+    .club{color:var(--rouge); font-weight:bold;}
+    label{display:block; margin:14px 0 4px; font-weight:bold; font-size:14px;}
+    input[type=text], input[type=date], select{
+      width:100%; padding:9px 10px; border:1px solid #ccc; border-radius:6px; font-size:14px;
+    }
+    .row{display:flex; gap:16px;}
+    .row > div{flex:1;}
+    button{
+      background:var(--bleu); color:#fff; border:none; padding:11px 22px; border-radius:6px;
+      font-size:14px; cursor:pointer; margin-top:18px;
+    }
+    button.secondary{background:#888;}
+    button:hover{opacity:.9;}
+    .hidden{display:none;}
+    .question{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee; font-size:14px;}
+    .question .txt{flex:1; padding-right:14px;}
+    .oui-non{display:flex; gap:10px; white-space:nowrap;}
+    .oui-non label{font-weight:normal; margin:0; display:flex; align-items:center; gap:4px;}
+    .section-title{background:var(--bleu); color:#fff; padding:6px 10px; border-radius:4px; margin-top:20px; font-size:13px;}
+    .banner-ok{background:#e8f8ee; border:1px solid var(--vert); color:#136b34; padding:12px; border-radius:6px; margin-top:16px;}
+    .banner-warn{background:#fdecec; border:1px solid var(--rouge); color:#8a1523; padding:12px; border-radius:6px; margin-top:16px;}
+    canvas{border:1px solid #999; border-radius:6px; touch-action:none; width:100%; max-width:400px; height:130px; background:#fff;}
+    .sig-block{margin-top:10px;}
+    .link-btn{display:inline-block; background:var(--rouge); color:#fff; text-decoration:none; padding:10px 18px; border-radius:6px; margin:8px 8px 0 0; font-size:14px;}
+    .small{font-size:12px; color:#666;}
+    .spinner{font-size:13px; color:var(--bleu);}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tennis de Table <span class="club">Isneauville</span> — Inscription en ligne</h1>
+
+  <!-- ============ ETAPE 1 : IDENTITE ============ -->
+  <div id="step1">
+    <h2>Étape 1 — Identité du joueur</h2>
+    <div class="row">
+      <div>
+        <label>Nom</label>
+        <input type="text" id="nom">
+      </div>
+      <div>
+        <label>Prénom</label>
+        <input type="text" id="prenom">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Date de naissance</label>
+        <input type="date" id="dob">
+      </div>
+      <div>
+        <label>Sexe</label>
+        <select id="sexe">
+          <option value="Fille">Fille</option>
+          <option value="Garçon">Garçon</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="validerIdentite()">Continuer</button>
+    <div id="identityInfo"></div>
+  </div>
+
+  <!-- ============ ETAPE 2A : QUESTIONNAIRE MINEUR ============ -->
+  <div id="step2mineur" class="hidden">
+    <h2>Étape 2 — Questionnaire de Santé Mineur (FFTT n°26-10-2)</h2>
+    <p class="small">Il est préférable que ce questionnaire soit complété par l'enfant lui-même selon son âge. Ce n'est pas un contrôle : il n'y a pas de bonnes ou de mauvaises réponses.</p>
+    <div id="questionsContainer"></div>
+    <div id="mineurResultat"></div>
+
+    <div id="signatureZone" class="hidden">
+      <div class="section-title">Signatures</div>
+      <div class="sig-block">
+        <label>Signature du joueur mineur (dessiner ci-dessous)</label>
+        <canvas id="sigMineur" width="400" height="130"></canvas>
+        <button type="button" class="secondary" onclick="clearSig('sigMineur')">Effacer</button>
+      </div>
+      <div class="sig-block">
+        <label>Signature du représentant légal</label>
+        <canvas id="sigLegal" width="400" height="130"></canvas>
+        <button type="button" class="secondary" onclick="clearSig('sigLegal')">Effacer</button>
+      </div>
+      <button onclick="envoyerAttestation()">Valider et déposer sur le Drive du club</button>
+      <div id="mineurEnvoiStatus"></div>
+    </div>
+  </div>
+
+  <!-- ============ ETAPE 2B : MAJEUR ============ -->
+  <div id="step2majeur" class="hidden">
+    <h2>Étape 2 — Parcours Majeur</h2>
+    <p>Pour valider votre licence, vous devez :</p>
+    <ol>
+      <li>Créer votre compte (si ce n'est pas déjà fait) sur l'espace licencié FFTT</li>
+      <li>Réaliser votre <b>PPS</b> (Parcours Prévention Santé) en ligne</li>
+    </ol>
+    <a class="link-btn" id="lienMalicence" href="#" target="_blank">Créer mon compte / Accéder au PPS</a>
+
+    <div id="zoneCertifV60" class="hidden">
+      <div class="section-title">Changement de catégorie 60 ans et + (V60 à V90)</div>
+      <p class="small">Si votre situation nécessite un certificat médical (1ère année dans la catégorie ou dernier certificat de plus de 5 ans), vous pouvez le déposer ici.</p>
+      <label>Fichier du certificat médical (PDF, JPG ou PNG)</label>
+      <input type="file" id="fichierCertif" accept=".pdf,.jpg,.jpeg,.png">
+      <button onclick="envoyerCertificat()">Déposer le certificat médical</button>
+      <div id="certifStatus"></div>
+    </div>
+  </div>
+
+  <!-- ============ ETAPE 3 : FINALISATION ============ -->
+  <div id="step3" class="hidden">
+    <div class="section-title">Étape finale</div>
+    <p>Une fois le questionnaire / PPS validé, terminez votre demande de licence directement sur le site du club :</p>
+    <a class="link-btn" id="lienClub" href="#" target="_blank">Faire ma demande de licence en ligne</a>
+    <p class="small">Le club poursuivra l'enregistrement dans SPID et confirmera la validation de la licence.</p>
+  </div>
+</div>
+
+<script>
+var QUESTIONS = [
+  "Es-tu allé(e) à l'hôpital pendant toute une journée ou plusieurs jours ?",
+  "As-tu été opéré(e) ?",
+  "As-tu beaucoup plus grandi que les autres années ?",
+  "As-tu beaucoup maigri ou grossi ?",
+  "As-tu eu la tête qui tourne pendant un effort ?",
+  "As-tu perdu connaissance ou es-tu tombé(e) sans te souvenir de ce qui s'était passé ?",
+  "As-tu reçu un ou plusieurs chocs violents qui t'ont obligé à interrompre un moment une séance de sport ?",
+  "As-tu eu beaucoup de mal à respirer pendant un effort par rapport à d'habitude ?",
+  "As-tu eu beaucoup de mal à respirer après un effort ?",
+  "As-tu eu mal dans la poitrine ou des palpitations (le cœur qui bat très vite) ?",
+  "As-tu commencé à prendre un nouveau médicament tous les jours et pour longtemps ?",
+  "As-tu arrêté le sport à cause d'un problème de santé pendant un mois ou plus ?",
+  "Te sens-tu très fatigué(e) ?",
+  "As-tu du mal à t'endormir ou te réveilles-tu souvent dans la nuit ?",
+  "Sens-tu que tu as moins faim ? que tu manges moins ?",
+  "Te sens-tu triste ou inquiet(e) ?",
+  "Pleures-tu plus souvent ?",
+  "Ressens-tu une douleur ou un manque de force à cause d'une blessure que tu t'es faite cette année ?",
+  "Penses-tu quelquefois à arrêter de faire du sport ou à changer de sport ?",
+  "Penses-tu avoir besoin de voir ton médecin pour continuer le sport ?",
+  "Souhaites-tu signaler quelque chose de plus concernant ta santé ?",
+  "Quelqu'un dans votre famille proche a-t-il eu une maladie grave du cœur ou du cerveau, ou est-il décédé subitement avant l'âge de 50 ans ? (question parents)",
+  "Êtes-vous inquiet pour son poids ? Trouvez-vous qu'il se nourrit trop ou pas assez ? (question parents)",
+  "Avez-vous manqué l'examen de santé prévu à l'âge de votre enfant chez le médecin ? (question parents)"
+];
+
+var identite = {};
+
+function validerIdentite(){
+  var nom = document.getElementById('nom').value.trim();
+  var prenom = document.getElementById('prenom').value.trim();
+  var dob = document.getElementById('dob').value;
+  var sexe = document.getElementById('sexe').value;
+
+  if(!nom || !prenom || !dob){
+    alert("Merci de renseigner le nom, le prénom et la date de naissance.");
+    return;
+  }
+
+  google.script.run.withSuccessHandler(function(info){
+    identite = {nom:nom, prenom:prenom, dateNaissance:dob, sexe:sexe, age:info.age, categorie:info.categorie};
+
+    document.getElementById('identityInfo').innerHTML =
+      '<div class="banner-ok">Âge calculé : <b>'+info.age+' ans</b> — Catégorie FFTT estimée : <b>'+info.categorie+'</b></div>';
+
+    if(info.estMineur){
+      document.getElementById('step2mineur').classList.remove('hidden');
+      document.getElementById('step2majeur').classList.add('hidden');
+      construireQuestionnaire();
+    } else {
+      document.getElementById('step2majeur').classList.remove('hidden');
+      document.getElementById('step2mineur').classList.add('hidden');
+      document.getElementById('lienMalicence').href = LIENS.compteMalicence;
+      if(info.certificatPossibleV60Plus){
+        document.getElementById('zoneCertifV60').classList.remove('hidden');
+      }
+    }
+    document.getElementById('step3').classList.remove('hidden');
+    document.getElementById('lienClub').href = LIENS.inscriptionClub;
+  }).getIdentityInfo(dob);
+}
+
+function construireQuestionnaire(){
+  var html = '';
+  QUESTIONS.forEach(function(q, i){
+    var n = i+1;
+    html += '<div class="question"><span class="txt">'+n+'. '+q+'</span>'+
+      '<span class="oui-non">'+
+      '<label><input type="radio" name="q'+n+'" value="Oui"> Oui</label>'+
+      '<label><input type="radio" name="q'+n+'" value="Non" checked> Non</label>'+
+      '</span></div>';
+  });
+  document.getElementById('questionsContainer').innerHTML = html;
+
+  var btn = document.createElement('button');
+  btn.textContent = 'Vérifier mes réponses';
+  btn.onclick = verifierReponses;
+  document.getElementById('questionsContainer').appendChild(btn);
+}
+
+var derniereEvaluation = null;
+
+function verifierReponses(){
+  var reponses = [];
+  var toutesNon = true;
+  for(var i=0;i<QUESTIONS.length;i++){
+    var n = i+1;
+    var val = document.querySelector('input[name="q'+n+'"]:checked').value;
+    if(val === 'Oui') toutesNon = false;
+    reponses.push({numero:n, texte:QUESTIONS[i], reponse:val});
+  }
+  derniereEvaluation = {reponses:reponses, toutesNon:toutesNon};
+
+  var resDiv = document.getElementById('mineurResultat');
+  if(toutesNon){
+    resDiv.innerHTML = '<div class="banner-ok">Aucune réponse OUI : pas de contre-indication constatée à ce jour. Vous pouvez signer l\\'attestation ci-dessous.</div>';
+    document.getElementById('signatureZone').classList.remove('hidden');
+  } else {
+    resDiv.innerHTML = '<div class="banner-warn">Au moins une réponse OUI : ce questionnaire est confidentiel (à ne remettre qu\\'à un médecin). Un <b>certificat médical</b> est requis avant de reprendre la pratique sportive. Merci de consulter un médecin, puis de déposer le certificat via le formulaire ci-dessous.</div>'+
+      '<label>Certificat médical (PDF, JPG ou PNG)</label>'+
+      '<input type="file" id="fichierCertifMineur" accept=".pdf,.jpg,.jpeg,.png">'+
+      '<button onclick="envoyerCertificatMineur()">Déposer le certificat médical</button>'+
+      '<div id="certifMineurStatus"></div>';
+    document.getElementById('signatureZone').classList.add('hidden');
+  }
+}
+
+function envoyerCertificatMineur(){
+  var input = document.getElementById('fichierCertifMineur');
+  if(!input.files.length){ alert('Sélectionnez un fichier.'); return; }
+  var file = input.files[0];
+  var reader = new FileReader();
+  document.getElementById('certifMineurStatus').innerHTML = '<span class="spinner">Envoi en cours…</span>';
+  reader.onload = function(){
+    google.script.run.withSuccessHandler(function(res){
+      document.getElementById('certifMineurStatus').innerHTML = '<div class="banner-ok">Certificat déposé : '+res.fileName+'</div>';
+    }).withFailureHandler(function(err){
+      document.getElementById('certifMineurStatus').innerHTML = '<div class="banner-warn">Erreur : '+err.message+'</div>';
+    }).saveCertificatMedical(reader.result, file.name, identite.nom, identite.prenom);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ---- Signature pad (canvas) ----
+function setupCanvas(id){
+  var canvas = document.getElementById(id);
+  var ctx = canvas.getContext('2d');
+  ctx.lineWidth = 2; ctx.strokeStyle = '#0b2a6b';
+  var drawing = false;
+
+  function pos(e){
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+    var clientX = (e.touches ? e.touches[0].clientX : e.clientX);
+    var clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+    return {x:(clientX-rect.left)*scaleX, y:(clientY-rect.top)*scaleY};
+  }
+  function start(e){ drawing = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+  function move(e){ if(!drawing) return; var p = pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+  function end(){ drawing = false; }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start);
+  canvas.addEventListener('touchmove', move);
+  canvas.addEventListener('touchend', end);
+}
+function clearSig(id){
+  var c = document.getElementById(id);
+  c.getContext('2d').clearRect(0,0,c.width,c.height);
+}
+setupCanvas('sigMineur');
+setupCanvas('sigLegal');
+
+function envoyerAttestation(){
+  if(!derniereEvaluation || !derniereEvaluation.toutesNon){
+    alert("Veuillez d'abord vérifier vos réponses.");
+    return;
+  }
+  var payload = {
+    nom: identite.nom, prenom: identite.prenom, dateNaissance: identite.dateNaissance,
+    sexe: identite.sexe, age: identite.age,
+    reponses: derniereEvaluation.reponses, toutesNon: true,
+    signatureMineur: document.getElementById('sigMineur').toDataURL('image/png'),
+    signatureLegal: document.getElementById('sigLegal').toDataURL('image/png'),
+    dateSignature: new Date().toLocaleDateString('fr-FR')
+  };
+  document.getElementById('mineurEnvoiStatus').innerHTML = '<span class="spinner">Enregistrement sur le Drive du club…</span>';
+  google.script.run.withSuccessHandler(function(res){
+    document.getElementById('mineurEnvoiStatus').innerHTML = '<div class="banner-ok">Attestation déposée avec succès : '+res.fileName+'</div>';
+  }).withFailureHandler(function(err){
+    document.getElementById('mineurEnvoiStatus').innerHTML = '<div class="banner-warn">Erreur : '+err.message+'</div>';
+  }).saveMinorAttestation(payload);
+}
+
+function envoyerCertificat(){
+  var input = document.getElementById('fichierCertif');
+  if(!input.files.length){ alert('Sélectionnez un fichier.'); return; }
+  var file = input.files[0];
+  var reader = new FileReader();
+  document.getElementById('certifStatus').innerHTML = '<span class="spinner">Envoi en cours…</span>';
+  reader.onload = function(){
+    google.script.run.withSuccessHandler(function(res){
+      document.getElementById('certifStatus').innerHTML = '<div class="banner-ok">Certificat déposé : '+res.fileName+'</div>';
+    }).withFailureHandler(function(err){
+      document.getElementById('certifStatus').innerHTML = '<div class="banner-warn">Erreur : '+err.message+'</div>';
+    }).saveCertificatMedical(reader.result, file.name, identite.nom, identite.prenom);
+  };
+  reader.readAsDataURL(file);
+}
+
+// Charger les liens externes au démarrage
+var LIENS = {inscriptionClub:'#', compteMalicence:'#'};
+google.script.run.withSuccessHandler(function(l){ LIENS = l; }).getLiensExternes();
+</script>
+</body>
+</html>
